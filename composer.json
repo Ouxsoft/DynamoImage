@@ -1,0 +1,85 @@
+{
+    "name": "ouxsoft/dynamoimage",
+    "description": "A PHP library for sizing, offseting, cropping images for the web. ",
+    "keywords": [
+        "srcset",
+        "picture",
+        "cropping",
+        "image",
+        "offset",
+        "resize"
+    ],
+    "type": "library",
+    "license": "mit",
+    "homepage": "https://github.com/Ouxsoft/DynamoImage",
+    "support": {
+        "issues": "https://github.com/Ouxsoft/DynamoImage/issues"
+    },
+    "authors": [
+        {
+            "name": "Ouxsoft",
+            "homepage": "http://ouxsoft.com",
+            "role": "Organization"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.1",
+        "ext-gd": "*",
+        "laminas/laminas-validator": "2.14.4"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^v3.1.0",
+        "phpunit/phpunit": "^9",
+        "phpbench/phpbench": "^1.1",
+        "phpstan/phpstan": "^0.12.99"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ouxsoft\\DynamoImage\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ouxsoft\\DynamoImage\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "qc" : [
+            "@fix-code-standards",
+            "@test"
+        ],
+        "test": [
+            "@unit-test",
+            "@feature-test",
+            "@coverage-test",
+            "@benchmark-test",
+            "@static-analysis-test",
+            "@code-standards-test"
+        ],
+        "unit-test": [
+            "./vendor/bin/phpunit --no-coverage --testsuite unit"
+        ],
+        "feature-test": [
+            "./vendor/bin/phpunit --no-coverage --testsuite feature"
+        ],
+        "coverage-test": [
+            "XDEBUG_MODE=coverage ./vendor/bin/phpunit"
+        ],
+        "benchmark-test" : [
+            "./vendor/bin/phpbench run tests/src/Benchmark --report=env --progress=dots"
+        ],
+        "static-analysis-test" : [
+            "./vendor/bin/phpstan analyse -c phpstan.neon"
+        ],
+        "fix-code-standards": [
+            "php-cs-fixer fix --using-cache=no src/",
+            "php-cs-fixer fix --using-cache=no tests/"
+        ],
+        "code-standards-test": [
+            "php-cs-fixer fix --dry-run --diff --verbose --using-cache=no src/ ",
+            "php-cs-fixer fix --dry-run --diff --verbose --using-cache=no tests/"
+        ]
+    }
+}

@@ -1,0 +1,29 @@
+{
+  "family": "luckbydice-fargate",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "luckbydice",
+      "image": "124653296725.dkr.ecr.us-east-2.amazonaws.com/luckbydice",
+      "portMappings": [
+        {
+          "containerPort": 9000,
+          "hostPort": 9000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "entryPoint": [
+        "/bin/bash",
+        "-c"
+      ],
+      "command": [ "CMD-SHELL", "bin/luckbydice 1d2 || exit 1" ]
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512"
+}

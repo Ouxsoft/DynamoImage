@@ -1,0 +1,253 @@
+name: CI
+
+on:
+  push:
+    branches: [ main , release/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  composer-validate:
+    name: "PHP ${{ matrix.php-version }} Composer Validate"
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        php-version:
+          - '7.4'
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v2"
+
+      - name: Install PHP
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          php-version: "${{ matrix.php-version }}"
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: "composer validate --strict --no-check-lock"
+
+  php-coding-standards-test:
+    needs:
+      - composer-validate
+    name: "PHP ${{ matrix.php-version }} Coding Standards Tests"
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        php-version:
+          - '7.4'
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v2"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          php-version: "${{ matrix.php-version }}"
+          tools: composer:v2
+
+      - name: "Composer install"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--no-scripts"
+
+      - name: Run Code Standard Test
+        run: composer run-script check-code-standards
+
+  php-static-analysis-test:
+    needs:
+      - composer-validate
+    name: "PHP ${{ matrix.php-version }} Static Analysis Tests"
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        php-version:
+          - '8.0'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: php-actions/composer@v6
+
+      - name: PHPStan Test
+        run: composer run-script analyze
+
+  php-unit-test:
+    name: "PHP ${{ matrix.php-version }} Unit Tests"
+    needs:
+      - composer-validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version:
+          - '7.2'
+          - '7.3'
+          - '7.4'
+          - '8.0'
+        include:
+          - php-version: '8.0'
+            submit-coverage: 'yes'
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v2
+
+      - name: PHP Info
+        run: php --version
+
+      - name: Cache Composer packages
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHP Unit Tests
+        run: composer run-script test
+
+      - name: Submit code coverage
+        if: matrix.submit-coverage == 'yes'
+        run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -f tests/output/clover.xml
+
+  php-benchmark-test:
+    name: "PHP ${{ matrix.php-version }} Benchmark Tests"
+    needs:
+      - composer-validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version:
+          - '7.2'
+          - '7.3'
+          - '7.4'
+          - '8.0'
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHP Benchmark Tests
+        run: composer run-script benchmark
+
+  php-feature-test:
+    name: "PHP ${{ matrix.php-version }} Feature Tests"
+    needs:
+      - composer-validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version:
+          - '7.2'
+          - '7.3'
+          - '7.4'
+          - '8.0'
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run LuckByDice bin test
+        run: php ./bin/luckbydice 1d2,3d6*2+2 0
+
+  dockerfile-validate:
+    name: "Dockerfile Validate"
+    needs:
+      - composer-validate
+      - php-coding-standards-test
+      - php-static-analysis-test
+      - php-unit-test
+      - php-benchmark-test
+      - php-feature-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: hadolint/hadolint-action@v1.5.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+
+  docker-hub:
+    name: "Push to Docker Hub"
+    environment: CI
+    needs:
+      - dockerfile-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ouxsoft/luckbydice:latest
+          target: standard
+
+  slack-notification:
+    name: "Slack Notification"
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - composer-validate
+      - php-coding-standards-test
+      - php-static-analysis-test
+      - php-unit-test
+      - php-benchmark-test
+      - php-feature-test
+      - dockerfile-validate
+      - docker-hub
+    steps:
+      - name: Send message to Slack API
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: |
+            Event "${{ github.event_name }}" in "${{ github.repository }}" by @${{ github.actor }}
+            Commit ${{ github.sha }}
+            ${{ needs.composer-validate.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} Composer Validate.
+            ${{ needs.php-coding-standards-test.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} PHP Coding Standards Tests
+            ${{ needs.php-static-analysis-test.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} PHP Static Analysis Tests
+            ${{ needs.php-unit-test.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} PHP Unit Tests.
+            ${{ needs.php-benchmark-test.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} PHP Benchmark Tests.
+            ${{ needs.php-feature-test.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} PHP Feature Tests.
+            ${{ needs.dockerfile-validate.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} Dockerfile Validate.
+            ${{ needs.docker-hub.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} Docker Hub.

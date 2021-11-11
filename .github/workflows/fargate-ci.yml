@@ -1,0 +1,67 @@
+name: Deploy to Fargate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-aws:
+    name: "Deploy to Fargate"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: luckbydice
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./.github/workflows/task-definition.json
+          container-name: luckbydice
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: keepers-cradle-service
+          cluster: keepers-cradle-cluster
+          wait-for-service-stability: true
+
+  slack-notification:
+    name: "Slack Notification"
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - deploy-aws
+    steps:
+      - name: Send message to Slack API
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: |
+            Event "${{ github.event_name }}" in "${{ github.repository }}" by @${{ github.actor }}
+            Commit ${{ github.sha }}
+            ${{ needs.deploy-aws.result == 'success' && ':white_check_mark:' || ':no_entry_sign:' }} Deploy to Fargate.
