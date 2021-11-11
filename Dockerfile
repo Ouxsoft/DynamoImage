@@ -53,7 +53,6 @@ RUN apt-get update \
 
 # Copy App
 COPY composer.json /application
-COPY composer.lock /application
 
 # Install composer and vendor packages
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
@@ -71,7 +70,6 @@ FROM build AS test
 
 # Testing uses bind volume mount
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" \
- && composer install --no-interaction \
  && pecl install xdebug \
  && echo "xdebug.mode=coverage\n" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" \
  && docker-php-ext-enable xdebug \
@@ -83,10 +81,6 @@ RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" \
 FROM build AS standard
 
 COPY . /application
-
-RUN dos2unix /application/bin/luckbydice \
- && chmod +x /application/bin/luckbydice \
- && composer install --no-dev --no-interaction
 
 #######################################
 # Sphinx (Build documentation)

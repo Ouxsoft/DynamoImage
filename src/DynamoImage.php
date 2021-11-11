@@ -24,11 +24,11 @@ use Exception;
  */
 class DynamoImage
 {
-    const JPEG = 1;
-    const JPG = 1;
-    const PNG = 2;
-    const GIF = 3;
-    const SUPPORTED_FILETYPES = [
+    public const JPEG = 1;
+    public const JPG = 1;
+    public const PNG = 2;
+    public const GIF = 3;
+    public const SUPPORTED_FILETYPES = [
         self::JPEG,
         self::JPG,
         self::PNG,
@@ -60,7 +60,7 @@ class DynamoImage
      * @return string
      * @throws Exception
      */
-    public function getContentType() : string
+    public function getContentType(): string
     {
         switch ($this->getFileExtension()) {
             case 'gif':
@@ -78,7 +78,7 @@ class DynamoImage
     /**
      * @return int
      */
-    public function getFileSize() : int
+    public function getFileSize(): int
     {
         return filesize($this->getCacheFilepath());
     }
@@ -87,10 +87,9 @@ class DynamoImage
      * @return GdImage
      * @throws Exception
      */
-    public function getContent() : GdImage
+    public function getContent(): GdImage
     {
-        switch ($this->getFileExtension())
-        {
+        switch ($this->getFileExtension()) {
             case 'gif':
                 return imagegif($this->image, null);
             case 'png':
@@ -106,7 +105,7 @@ class DynamoImage
     /**
      * @param string $cache_dir
      */
-    public function setCacheDir(string $cache_dir) : void
+    public function setCacheDir(string $cache_dir): void
     {
         $this->cache_dir = $cache_dir;
     }
@@ -114,7 +113,7 @@ class DynamoImage
     /**
      * @param string $assets_dir
      */
-    public function setAssetDir(string $assets_dir) : void
+    public function setAssetDir(string $assets_dir): void
     {
         $this->assets_dir = $assets_dir;
     }
@@ -127,14 +126,14 @@ class DynamoImage
     {
         $parameters = Path::decode("/{$request}", ['height','width','dimension','offset'], 'filename');
 
-        if(
+        if (
             isset($parameters['dimension'])
             && preg_match('/([0-9]+x[0-9]+)/', $parameters['dimension'])
         ) {
-            list($parameters['width'], $parameters['height'] ) = explode('x', $parameters['dimension']);
+            list($parameters['width'], $parameters['height']) = explode('x', $parameters['dimension']);
         }
 
-        if(
+        if (
             isset($parameters['offset'])
             && (strpos($parameters['offset'], ',') !== false)
         ) {
@@ -187,7 +186,7 @@ class DynamoImage
      * @param string $filename
      * @return void
      */
-    public function setFilename(string $filename) : void
+    public function setFilename(string $filename): void
     {
         // set filename
         $this->filename = $filename;
@@ -396,7 +395,7 @@ class DynamoImage
     /**
      * @return string
      */
-    public function getFileExtension() : string
+    public function getFileExtension(): string
     {
         return $this->file_extension;
     }
@@ -404,7 +403,7 @@ class DynamoImage
     /**
      * @return bool
      */
-    public function isCached() : bool
+    public function isCached(): bool
     {
         $cache_validator = new Exists($this->cache_dir);
         if ($cache_validator->isValid($this->cache_filename)) {
@@ -416,7 +415,7 @@ class DynamoImage
     /**
      * @return string
      */
-    public function getCacheFilepath() : string
+    public function getCacheFilepath(): string
     {
         return $this->cache_filepath;
     }
@@ -425,7 +424,7 @@ class DynamoImage
      * Saves $this->image to specific to cache file path
      * @throws Exception
      */
-    public function saveCache() : void
+    public function saveCache(): void
     {
         switch ($this->getFileExtension()) {
             case 'gif':
@@ -448,7 +447,7 @@ class DynamoImage
      * @param $focal_point_x
      * @param $focal_point_y
      */
-    public function setFocalPoints($focal_point_x, $focal_point_y) : void
+    public function setFocalPoints($focal_point_x, $focal_point_y): void
     {
         $this->focal_point_x = $focal_point_x;
         $this->focal_point_y = $focal_point_y;
@@ -459,7 +458,7 @@ class DynamoImage
      * @param $height
      * @param $width
      */
-    public function setDimensions($height, $width) : void
+    public function setDimensions($height, $width): void
     {
         $this->height = $height;
         $this->width = $width;

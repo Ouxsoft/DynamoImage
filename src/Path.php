@@ -23,7 +23,7 @@ class Path
      * @param string $catchAll
      * @return array
      */
-    public static function decode(string $string, array $args = [], string $catchAll) : array
+    public static function decode(string $string, array $args = [], string $catchAll): array
     {
         $parameters = [];
         $unparsed = $string;
@@ -34,7 +34,7 @@ class Path
 
             $count++;
 
-            if(in_array($slug, $args)){
+            if (in_array($slug, $args)) {
                 $parameters[$slug] = strtok($unparsed, '/');
                 $unparsed = substr($unparsed, strlen("{$parameters[$slug]}/"));
                 continue;

@@ -10,7 +10,7 @@
         "resize"
     ],
     "type": "library",
-    "license": "mit",
+    "license": "Apache License 2.0",
     "homepage": "https://github.com/Ouxsoft/DynamoImage",
     "support": {
         "issues": "https://github.com/Ouxsoft/DynamoImage/issues"
