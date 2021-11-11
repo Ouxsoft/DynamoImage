@@ -8,16 +8,16 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Model;
+namespace Ouxsoft\DynamoImage;
 
-use App\Model\DynamoImagePath;
+use Laminas\Validator\File\Exists;
 use GdImage;
 use Exception;
-use Laminas\Validator\File\Exists;
 
 /**
  * Class DynamoImage
- * checks if the requested image exists in cache using a hash
+ *
+ * checks if the requested image exists in cache named using hash
  * if it is not cached, it checks to see if the image exists as an assets
  * if the image exists, then it generates a resized image, stores it in cache.
  * does not handle serving image.
@@ -125,7 +125,7 @@ class DynamoImage
      */
     public function setURL(string $request)
     {
-        $parameters = DynamoImagePath::decodeParams("/{$request}", ['height','width','dimension','offset'], 'filename');
+        $parameters = Path::decode("/{$request}", ['height','width','dimension','offset'], 'filename');
 
         if(
             isset($parameters['dimension'])

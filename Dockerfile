@@ -128,6 +128,6 @@ COPY src /app/src
 WORKDIR "/app/docs"
 
 RUN doxygen Doxyfile \
- && doxyphp2sphinx Ouxsoft::LuckByDice
+ && doxyphp2sphinx Ouxsoft::DynamoImage
 
 SHELL ["/bin/bash", "-c"]

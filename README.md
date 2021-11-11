@@ -2,7 +2,7 @@
 
 A PHP library for resizing images based on request.
 
-Example showing Symfony intergration:
+Example showing Symfony integration:
 ```
 <?php
 

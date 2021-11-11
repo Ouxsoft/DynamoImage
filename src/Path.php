@@ -8,11 +8,10 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Model;
+namespace Ouxsoft\DynamoImage;
 
-class DynamoImagePath
+class Path
 {
-
     /**
      * Parses URL to array containing key values
      * e.g.
@@ -24,7 +23,7 @@ class DynamoImagePath
      * @param string $catchAll
      * @return array
      */
-    public static function decodeParams(string $string, array $args = [], string $catchAll) : array
+    public static function decode(string $string, array $args = [], string $catchAll) : array
     {
         $parameters = [];
         $unparsed = $string;
@@ -48,63 +47,6 @@ class DynamoImagePath
         return $parameters;
     }
 
-    /**
-     * Decodes string of parameters to array
-     *
-     * @param string $string
-     * @return array
-     */
-    public static function decode(string $string): array
-    {
-        $filepath = '';
-        $parts = explode('/', $string);
-        $parameters = [];
-        $previous_key = '';
-        foreach ($parts as $value) {
-            if ($value == null) {
-                continue;
-            }
-
-            // start by building out filepath
-            if (is_dir(dirname(__DIR__, 2) . $filepath . '/' . $value)) {
-                $filepath .= '/' . $value;
-                continue;
-            }
-
-            switch ($previous_key) {
-                case 'height':
-                    $parameters['height'] = $value;
-                    break;
-                case 'width':
-                    $parameters['width'] = $value;
-                    break;
-                case 'dimension':
-                    // if dimensions then is array
-                    if (preg_match('/([0-9]+x[0-9]+)/', $value)) {
-                        list($width, $height) = explode('x', $value);
-                        $parameters['width'] = $width;
-                        $parameters['height'] = $height;
-                    }
-                    break;
-                case 'offset':
-                    // if comma then is array
-                    if (strpos($value, ',') !== false) {
-                        list($x, $y) = explode(',', $value);
-                        $parameters['offset_x'] = $x;
-                        $parameters['offset_y'] = $y;
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-            $previous_key = $value;
-        }
-
-        $parameters['filename'] = $filepath . '/' . end($parts);
-
-        return $parameters;
-    }
 
     /**
      * Encodes parameters provided
