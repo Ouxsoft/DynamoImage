@@ -1,6 +1,6 @@
 # DynamoImage
 
-A PHP library for resizing images based on request.
+A PHP library for resizing and caching images based on request.
 
 Example showing Symfony integration:
 ```
